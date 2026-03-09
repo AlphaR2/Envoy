@@ -134,11 +134,7 @@ Create a `.env` file in the project root (see `.env.example`):
 EXPO_PUBLIC_API_URL=https://your-backend.com
 EXPO_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
 EXPO_PUBLIC_SOLANA_NETWORK=devnet           # or mainnet-beta
-EXPO_PUBLIC_PHANTOM_APP_ID=                 # from phantom.app/developers
 ```
-
-`EXPO_PUBLIC_PHANTOM_APP_ID` is required for the Phantom embedded SDK (Google login path).
-
 ---
 
 ## Getting Started
@@ -160,7 +156,7 @@ eas build --platform android
 
 ## Authentication & Wallet Flow
 
-Envoy supports two wallet connection methods, selected on the auth screen:
+Envoy supports standard connection methods:
 
 ### Path 1 — Mobile Wallet Adapter (MWA)
 For users with Phantom (or any MWA-compatible wallet) already installed.
@@ -172,15 +168,6 @@ For users with Phantom (or any MWA-compatible wallet) already installed.
 
 Hook: `src/hooks/useWalletAuth.ts`
 
-### Path 2 — Phantom Embedded SDK
-For new users without a wallet — creates one via Google social login.
-
-1. `useConnect()` triggers the Phantom embedded flow (Google OAuth)
-2. `useSolana().solana.signMessage()` returns `{ signature: Uint8Array, publicKey: string }`
-3. Same nonce/verify backend flow as MWA
-4. `PhantomProvider` must be configured with `appId`, `scheme: 'envoy'`, `AddressType.solana`
-
-Hook: `src/hooks/usePhantomAuth.ts`
 
 ### Token Refresh
 `baseQuery.ts` intercepts 401 responses, calls `/auth/refresh`, retries the original request, or dispatches logout if refresh fails.
@@ -454,20 +441,6 @@ Used on all screens that display wallet addresses (agent NFT pubkey, escrow addr
 - **Tappable** → opens Solana Explorer
 - **Copy icon** → copies full address to clipboard + toast
 
-### `tokenStorage.ts`
-SecureStore wrappers under keys `envoy_access_token` and `envoy_refresh_token`.
-
----
-
-## Splash Screen
-
-Configured in `app.json`:
-- Image: `./assets/images/logo.png`
-- Resize mode: `contain`
-- Background: `#08081A` (deep navy-black)
-
-Both `expo.splash` (cross-platform) and `expo.android.splash` (Android-specific) are set.
-
 ---
 
 ## Build
@@ -482,6 +455,3 @@ eas build --platform android --profile preview
 # Production build
 eas build --platform android --profile production
 ```
-
-App ID: `com.envoy.app`
-EAS Project ID: `87923930-591d-4d97-9096-0d8aac6d7150`
