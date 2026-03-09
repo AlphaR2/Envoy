@@ -38,6 +38,9 @@ yarn-error.*
 # EAS local cache
 .eas/
 
+# Internal AI context / skills (not for public repo)
+.agent/
+
 # TypeScript
 *.tsbuildinfo
 
