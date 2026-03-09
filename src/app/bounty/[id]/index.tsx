@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   Image,
+  Linking,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,7 +33,7 @@ import { useSolanaTransaction } from '../../../hooks/useSolanaTransaction';
 import { useToast } from '../../../components/ui/Toast';
 import { useAppSelector } from '../../../store/store';
 import { openInExplorer, shortAddress } from '../../../utils/solanaExplorer';
-import { BountyState, DispatchState, Agent } from '../../../types/api';
+import { BountyState, DispatchState, Agent, Submission } from '../../../types/api';
 // DispatchState used via DISPATCH_CONFIG record key
 
 const DISPATCH_CONFIG: Record<DispatchState, { label: string; color: string; icon: string }> = {
@@ -152,6 +153,104 @@ function RegisterModal({
   );
 }
 
+// ── Submission Detail Modal ───────────────────────────────────────────────────
+function SubmissionModal({
+  submission,
+  onClose,
+}: {
+  submission: Submission | null;
+  onClose: () => void;
+}) {
+  if (!submission) return null;
+
+  const openUrl = (url: string) => Linking.openURL(url).catch(() => {});
+
+  // Priority: hosted_url (our R2 copy) → external_url (agent's original link)
+  const primaryLink = submission.hosted_url ?? submission.external_url;
+  const hasDownload = !!submission.deliverable_url;
+
+  return (
+    <Modal visible={!!submission} animationType="slide" transparent onRequestClose={onClose}>
+      <TouchableOpacity style={n.overlay} activeOpacity={1} onPress={onClose} />
+      <View style={n.sheet}>
+        <View style={n.handle} />
+
+        {/* Header */}
+        <View style={n.modalHeader}>
+          <View style={n.modalAvatar}>
+            <Image source={require('../../../../assets/images/headaai.png')} style={n.modalAvatarImg} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={n.modalAgentName}>{submission.agent_name ?? 'Agent'}</Text>
+            <Text style={n.modalDate}>
+              {new Date(submission.created_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </Text>
+          </View>
+          <View style={n.modalFormatBadge}>
+            <Text style={n.modalFormatText}>{submission.deliverable_format}</Text>
+          </View>
+        </View>
+
+        {/* Scrollable notes content */}
+        <ScrollView
+          style={n.notesScroll}
+          contentContainerStyle={{ paddingBottom: 12 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {submission.notes ? (
+            <Text style={n.notesText}>{submission.notes}</Text>
+          ) : (
+            <Text style={n.notesEmpty}>No notes provided with this submission.</Text>
+          )}
+        </ScrollView>
+
+        {/* Links: hosted/external first (primary), then download URL */}
+        {(primaryLink || hasDownload) && (
+          <View style={n.linksSection}>
+            {primaryLink && (
+              <TouchableOpacity
+                style={n.linkRow}
+                activeOpacity={0.75}
+                onPress={() => openUrl(primaryLink)}
+              >
+                <Ionicons
+                  name={submission.hosted_url ? 'globe-outline' : 'link-outline'}
+                  size={15}
+                  color={colors.brand.secondary}
+                />
+                <Text style={n.linkText} numberOfLines={1}>
+                  {submission.hosted_url ? 'View hosted deliverable' : primaryLink}
+                </Text>
+                <Ionicons name="open-outline" size={14} color={colors.brand.secondary} />
+              </TouchableOpacity>
+            )}
+            {hasDownload && (
+              <TouchableOpacity
+                style={[n.linkRow, { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: colors.border.subtle }]}
+                activeOpacity={0.75}
+                onPress={() => openUrl(submission.deliverable_url!)}
+              >
+                <Ionicons name="download-outline" size={15} color={colors.text.muted} />
+                <Text style={[n.linkText, { color: colors.text.muted }]} numberOfLines={1}>
+                  {submission.deliverable_url}
+                </Text>
+                <Ionicons name="open-outline" size={14} color={colors.text.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        <TouchableOpacity style={n.closeBtn} activeOpacity={0.8} onPress={onClose}>
+          <Text style={n.closeBtnText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Main Screen ──────────────────────────────────────────────────────────────
 export default function BountyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -177,6 +276,7 @@ export default function BountyDetailScreen() {
   const { signAndSend } = useSolanaTransaction();
 
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [registering, setRegistering] = useState(false);
   const [deregistering, setDeregistering] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -501,34 +601,38 @@ export default function BountyDetailScreen() {
                 <>
                   <Text style={s.subHeader}>Submissions</Text>
                   {submissions.map((sub) => (
-                    <GlassCard key={sub.id} intensity="low" style={s.submissionCard}>
-                      <View style={s.submissionHeader}>
-                        <View style={s.agentAvatar}>
-                          <Image source={require('../../../../assets/images/headaai.png')} style={s.agentAvatarImg} />
+                    <TouchableOpacity
+                      key={sub.id}
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedSubmission(sub)}
+                    >
+                      <GlassCard intensity="low" style={s.submissionCard}>
+                        <View style={s.submissionHeader}>
+                          <View style={s.agentAvatar}>
+                            <Image source={require('../../../../assets/images/headaai.png')} style={s.agentAvatarImg} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={s.agentName}>{sub.agent_name ?? 'Agent'}</Text>
+                            <Text style={s.submittedAt}>
+                              {new Date(sub.created_at).toLocaleString('en-US', {
+                                month: 'short', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit',
+                              })}
+                            </Text>
+                          </View>
+                          <View style={s.formatBadge}>
+                            <Text style={s.formatText}>{sub.deliverable_format}</Text>
+                          </View>
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={s.agentName}>{sub.agent_name ?? 'Agent'}</Text>
-                          <Text style={s.submittedAt}>
-                            {new Date(sub.created_at).toLocaleString('en-US', {
-                              month: 'short', day: 'numeric',
-                              hour: '2-digit', minute: '2-digit',
-                            })}
-                          </Text>
+                        {sub.notes && (
+                          <Text style={s.submissionNotes} numberOfLines={2}>{sub.notes}</Text>
+                        )}
+                        <View style={s.readMore}>
+                          <Text style={s.readMoreText}>Read full submission</Text>
+                          <Ionicons name="chevron-forward" size={13} color={colors.brand.secondary} />
                         </View>
-                        <View style={s.formatBadge}>
-                          <Text style={s.formatText}>{sub.deliverable_format}</Text>
-                        </View>
-                      </View>
-                      {sub.notes && (
-                        <Text style={s.submissionNotes} numberOfLines={3}>{sub.notes}</Text>
-                      )}
-                      {sub.deliverable_url && (
-                        <View style={s.deliverableLink}>
-                          <Ionicons name="link-outline" size={14} color={colors.brand.secondary} />
-                          <Text style={s.deliverableLinkText} numberOfLines={1}>{sub.deliverable_url}</Text>
-                        </View>
-                      )}
-                    </GlassCard>
+                      </GlassCard>
+                    </TouchableOpacity>
                   ))}
 
                   {isClient && (
@@ -616,6 +720,12 @@ export default function BountyDetailScreen() {
         onClose={() => setRegisterModalVisible(false)}
         onRegister={handleRegister}
         registering={registering}
+      />
+
+      {/* Submission Detail Modal */}
+      <SubmissionModal
+        submission={selectedSubmission}
+        onClose={() => setSelectedSubmission(null)}
       />
     </View>
   );
@@ -721,12 +831,10 @@ const s = StyleSheet.create({
   },
   formatText: { fontSize: 11, fontWeight: '600', color: colors.text.muted },
   submissionNotes: { fontSize: 13, color: colors.text.secondary, lineHeight: 19 },
-  deliverableLink: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: colors.brand.secondary + '10',
-    borderRadius: 10, padding: 10,
+  readMore: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2,
   },
-  deliverableLinkText: { fontSize: 12, color: colors.brand.secondary, flex: 1 },
+  readMoreText: { fontSize: 12, fontWeight: '600', color: colors.brand.secondary },
   actionBtn: { marginTop: 8, borderRadius: 20 },
   statsRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -819,4 +927,67 @@ const m = StyleSheet.create({
   confirmBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
   emptyWrap: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   emptyText: { fontSize: 14, color: colors.text.muted, textAlign: 'center', lineHeight: 22 },
+});
+
+// ── Submission Modal Styles ───────────────────────────────────────────────────
+const n = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' },
+  sheet: {
+    backgroundColor: colors.background.secondary,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    paddingTop: 12,
+    maxHeight: '88%',
+    borderTopWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  handle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: colors.border.default,
+    alignSelf: 'center', marginBottom: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingBottom: 14,
+    borderBottomWidth: 1, borderColor: colors.border.subtle,
+    marginBottom: 14,
+  },
+  modalAvatar: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: colors.brand.secondary + '15',
+    overflow: 'hidden',
+  },
+  modalAvatarImg: { width: 40, height: 40 },
+  modalAgentName: { fontSize: 15, fontWeight: '700', color: colors.text.primary },
+  modalDate: { fontSize: 11, color: colors.text.muted, marginTop: 2 },
+  modalFormatBadge: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+  },
+  modalFormatText: { fontSize: 11, fontWeight: '600', color: colors.text.muted },
+  notesScroll: { flex: 1, maxHeight: 420 },
+  notesText: {
+    fontSize: 14, color: colors.text.secondary, lineHeight: 22,
+    fontFamily: 'System',
+  },
+  notesEmpty: { fontSize: 14, color: colors.text.muted, fontStyle: 'italic' },
+  linksSection: { gap: 8, marginTop: 16 },
+  linkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: colors.brand.secondary + '10',
+    borderRadius: 12, padding: 12,
+    borderWidth: 1, borderColor: colors.brand.secondary + '30',
+  },
+  linkText: {
+    flex: 1, fontSize: 12, fontWeight: '600', color: colors.brand.secondary,
+  },
+  closeBtn: {
+    marginTop: 16, height: 48, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: colors.border.subtle,
+  },
+  closeBtnText: { fontSize: 15, fontWeight: '700', color: colors.text.secondary },
 });

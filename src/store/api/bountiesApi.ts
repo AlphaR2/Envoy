@@ -95,10 +95,19 @@ export const bountiesApi = createApi({
         method: 'POST',
         body: { winnerAgentId },
       }),
+      invalidatesTags: (_, __, { bountyId }) => [
+        { type: 'Bounty', id: bountyId },
+        'Bounty',
+        { type: 'Submissions', id: bountyId },
+      ],
     }),
 
     claimRefund: builder.mutation<ClaimRefundResp, string>({
       query: (bountyId) => ({ url: `/bounties/${bountyId}/claim-refund`, method: 'POST' }),
+      invalidatesTags: (_, __, bountyId) => [
+        { type: 'Bounty', id: bountyId },
+        'Bounty',
+      ],
     }),
 
   }),

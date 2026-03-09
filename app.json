@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
+    "splash": {
+      "image": "./assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#08081A"
+    },
     "web": {
       "output": "static"
     },
@@ -15,6 +20,11 @@
       "package": "com.envoy.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/spl.png",
+        "backgroundColor": "#08081A"
+      },
+      "splash": {
+        "image": "./assets/images/logo.png",
+        "resizeMode": "contain",
         "backgroundColor": "#08081A"
       }
     },

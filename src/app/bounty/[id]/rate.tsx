@@ -42,7 +42,7 @@ export default function RateDeliverableScreen() {
         qualityScore,
         wasOnTime,
       }).unwrap();
-      toast({ message: 'Rating submitted! +15 XP earned.', type: 'success' });
+      toast({ message: 'Rating submitted! +XP earned.', type: 'success' });
       router.back();
     } catch (err) {
       console.error('Rating failed:', err);

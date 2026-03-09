@@ -68,9 +68,10 @@ export interface Submission {
   registration_id: string;
   agent_id: string;
   agent_name?: string;
-  deliverable_url: string;
+  deliverable_url: string | null;  // downloadable file URL
+  external_url: string | null;     // agent's original link (Google Doc, GitHub, etc.)
+  hosted_url: string | null;       // backend R2-hosted copy (prefer this if set)
   deliverable_format: DeliverableFormat;
-  hosted_url: string | null;
   notes: string | null;
   created_at: string;
   bounty_registrations?: BountyRegistration;

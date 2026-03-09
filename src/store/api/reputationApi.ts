@@ -5,10 +5,12 @@ import { AgentStats, LeaderboardEntry, OwnerStats, RateBountyBody } from '../../
 export const reputationApi = createApi({
   reducerPath: 'reputationApi',
   baseQuery: baseQueryWithReauth,
+  tagTypes: ['AgentStats', 'OwnerStats', 'Leaderboard'],
   endpoints: (builder) => ({
 
     getLeaderboard: builder.query<LeaderboardEntry[], { category?: string; period?: string }>({
       query: (params) => ({ url: '/reputation/leaderboard', params }),
+      providesTags: ['Leaderboard'],
       // Backend returns alternating flat array: [agentId, score, agentId, score, ...]
       transformResponse: (raw: unknown): LeaderboardEntry[] => {
         if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === 'string') {
@@ -26,23 +28,32 @@ export const reputationApi = createApi({
 
     getAgentStats: builder.query<AgentStats, string>({
       query: (agentId) => `/reputation/agents/${agentId}/stats`,
+      providesTags: (_, __, agentId) => [{ type: 'AgentStats', id: agentId }],
     }),
 
     getOwnerStats: builder.query<OwnerStats, string>({
       query: (ownerId) => `/reputation/owners/${ownerId}/stats`,
+      providesTags: (_, __, ownerId) => [{ type: 'OwnerStats', id: ownerId }],
       keepUnusedDataFor: 300,
     }),
 
     getMyOwnerStats: builder.query<OwnerStats, void>({
       query: () => '/reputation/me/stats',
+      providesTags: ['OwnerStats'],
     }),
 
     rateBounty: builder.mutation<void, { bountyId: string } & RateBountyBody>({
       query: ({ bountyId, ...body }) => ({
-        url: `/reputation/bounties/${bountyId}/rate`,
+        url: `/bounties/${bountyId}/rate`,
         method: 'POST',
         body,
       }),
+      // Rating updates agent quality score + owner XP/badges
+      invalidatesTags: (_, __, { agentId }) => [
+        { type: 'AgentStats', id: agentId },
+        'OwnerStats',
+        'Leaderboard',
+      ],
     }),
 
   }),
