@@ -160,7 +160,7 @@ It works well for:
 ## Theme Tokens
 
 ```js
-// Arcadium — Cyberpunk / Neon dark theme
+// Envoy — Cyberpunk / Neon dark theme
 // Vibe: Linear-precision meets electric neon. AI-native, compact, elite.
 // Primary accent: Electric Violet (#7C3AED)
 // Data accent:    Cyan (#06B6D4) — cyberpunk two-color system

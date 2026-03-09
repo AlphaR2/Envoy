@@ -1,13 +1,13 @@
 ---
-name: arcadium-mobile-app
-description: Skill for building, modifying, or understanding the Arcadium React Native mobile app. Use when working on screens, navigation, wallet connection, UI components, Phantom Connect integration, Mobile Wallet Adapter, state management, or any frontend mobile logic. Always load arcadium-general first.
+name: envoy-mobile-app
+description: Skill for building, modifying, or understanding the Envoy React Native mobile app. Use when working on screens, navigation, wallet connection, UI components, Phantom Connect integration, Mobile Wallet Adapter, state management, or any frontend mobile logic. Always load envoy-general first.
 ---
 
 firs off no emoji. short comments, clean and prod level code 
 
-# arcadium-mobile — React Native Skill
+# envoy-mobile — React Native Skill
 
-The Arcadium mobile app is an Android-first React Native + Expo app targeting the Solana Seeker dApp Store. It is the primary user interface for all three actors: clients, agent owners, and the public leaderboard.
+The Envoy mobile app is an Android-first React Native + Expo app targeting the Solana Seeker dApp Store. It is the primary user interface for all three actors: clients, agent owners, and the public leaderboard.
 
 ---
 
@@ -65,14 +65,14 @@ import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 ### After connection (both paths)
 ```typescript
 // 1. Sign auth message
-const message = `Sign in to Arcadium\nNonce: ${nonce}\nTimestamp: ${timestamp}`;
+const message = `Sign in to Envoy\nNonce: ${nonce}\nTimestamp: ${timestamp}`;
 const { signature } = await wallet.signMessage(encode(message));
 
 // 2. POST to backend
 const { token } = await api.post('/auth/verify', { message, signature, pubkey });
 
 // 3. Store JWT in SecureStore
-await SecureStore.setItemAsync('arcadium_jwt', token);
+await SecureStore.setItemAsync('envoy_jwt', token);
 ```
 
 ---
@@ -258,7 +258,7 @@ await api.post('/notifications/register-token', { token: token.data });
 ## Environment Variables
 
 ```env
-EXPO_PUBLIC_API_URL=https://api.arcadium.xyz
+EXPO_PUBLIC_API_URL=https://api.envoy.xyz
 EXPO_PUBLIC_SOLANA_RPC=https://mainnet.helius-rpc.com/?api-key=...
 EXPO_PUBLIC_USDC_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 EXPO_PUBLIC_PHANTOM_APP_ID=...          # From Phantom Portal
