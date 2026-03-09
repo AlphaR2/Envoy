@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "scheme": "envoy",
+    "userInterfaceStyle": "dark",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "web": {
+      "output": "static"
+    },
+    "name": "Envoy",
+    "slug": "envoy",
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "package": "com.envoy.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/spl.png",
+        "backgroundColor": "#08081A"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-secure-store",
+      "expo-navigation-bar",
+      "react-native-edge-to-edge",
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "router": {},
+      "expo-navigation-bar": {},
+      "eas": {
+        "projectId": "87923930-591d-4d97-9096-0d8aac6d7150"
+      }
+    }
+  }
+}
